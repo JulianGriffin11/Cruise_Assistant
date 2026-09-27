@@ -6,18 +6,18 @@ Check a box when that step is done.
 
 ## Phase 1 — Skeleton
 
-- [ ] Python project with FastAPI, settings, and a SQLAlchemy session
-- [ ] Alembic set up against the direct Supabase database URL (port 5432)
+- [x] Python project with FastAPI, settings, and a SQLAlchemy session
+- [x] Alembic set up against the direct Supabase database URL (port 5432)
 - [ ] Supabase Postgres with the `vector` extension
 - [ ] Supabase Storage bucket `itineraries` for the original PDFs
-- [ ] Health check that confirms the API can reach the database
+- [x] Health check that confirms the API can reach the database
 
 ## Phase 2 — Data model
 
 - [ ] `cruises` table: name, year, optional start and end dates
 - [ ] `documents` table: cruise, filename, storage path, page count, status, error message
 - [ ] `chunks` table: document, cruise, page number, chunk index, text, embedding `vector(1536)`
-- [ ] First migration creates the `vector` extension and these three tables
+- [ ] Migration adds the cruise, document, and chunk tables
 - [ ] No conversation or message tables in this version
 
 ## Phase 3 — Ingest

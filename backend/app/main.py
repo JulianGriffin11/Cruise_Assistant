@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.routes import cruises, documents
+from app.api.routes import chat, cruises, documents
 from app.db.session import get_db
 from app.ingestion.storage import ensure_itineraries_bucket
 

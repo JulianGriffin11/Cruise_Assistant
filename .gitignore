@@ -2,3 +2,6 @@
 .env
 __pycache__/
 *.py[cod]
+
+# Local sample PDFs for playground ingest (not committed)
+/Data/*.pdf

@@ -50,24 +50,33 @@ HTTP routes live under `backend/app/api/routes/`. Pipelines live under `backend/
 
 ## Phase 5 — Frontend
 
-- [ ] Vite, React, TypeScript, and Tailwind
-- [ ] shadcn/ui init, with button, input, textarea, card, select, badge, dialog, scroll-area, separator, alert, and skeleton
-- [ ] Library page: cruise cards, dialog to create a cruise, PDF upload
-- [ ] Library page: status badge and skeleton while a document is processing
-- [ ] Chat page: cruise select (or search all), scroll area, textarea, and send button
-- [ ] Chat page: stream the reply and show cruise name and page under each answer
-- [ ] Thread lives in React state and clears on refresh
+- [x] Vite, React, TypeScript, and Tailwind
+- [x] shadcn/ui init, with button, input, textarea, card, select, badge, dialog, scroll-area, separator, alert, and skeleton
+- [x] Library page: cruise cards, dialog to create a cruise, PDF upload
+- [x] Library page: status badge and skeleton while a document is processing
+- [x] Chat page: cruise select (or search all), scroll area, textarea, and send button
+- [x] Chat page: stream the reply and show cruise name and page under each answer
+- [x] Thread lives in React state and clears on refresh
 
 ## Phase 6 — Check the path
 
-- [ ] Upload one real itinerary and wait until it is `ready`
-- [ ] Ask a question whose answer is on a known page and confirm that page is cited
-- [ ] Ask a question the PDF does not answer and confirm it does not invent details
+- [x] Upload one real itinerary and wait until it is `ready`
+- [x] Ask a question whose answer is on a known page and confirm that page is cited
+- [x] Ask a question the PDF does not answer and confirm it does not invent details
+
+## Phase 7 — Deploy (Render)
+
+- [ ] Backend web service on Render (FastAPI + uvicorn)
+- [ ] Frontend static site on Render (`npm run build`, serve `dist/`)
+- [ ] Production env: Supabase, OpenAI, `DATABASE_URL` (direct 5432), backend secrets, `CORS_ORIGINS` for the live frontend URL, `VITE_API_BASE_URL` for the live API URL at build time
+- [ ] Alembic migrations applied on the production database
+- [ ] Health check and a smoke test: upload and chat in the browser on the Render URLs
 
 ## Minimum viable product
 
 The API can be called from a terminal before the screens exist. That does not count. He uploads and asks in the browser.
 
-- [ ] Upload one itinerary PDF in the app and see it become ready
-- [ ] Ask a question in the chat and get an answer that cites the page
-- [ ] Both of those happen in the browser, not by calling the API from a terminal
+- [x] Upload one itinerary PDF in the app and see it become ready
+- [x] Ask a question in the chat and get an answer that cites the page
+- [x] Both of those happen in the browser, not by calling the API from a terminal
+- [ ] Same upload and chat flow works on the deployed Render app (not localhost)

@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.routes import chat, cruises, documents
+from app.config import get_settings
 from app.db.session import get_db
 from app.ingestion.storage import ensure_itineraries_bucket
 
@@ -16,6 +18,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(cruises.router, prefix="/cruises", tags=["cruises"])
 app.include_router(documents.router, prefix="/documents", tags=["documents"])

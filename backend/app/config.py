@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_service_role_key: str
     openai_api_key: str
+    cors_origins: list[str]
 
     @field_validator("database_url")
     @classmethod
@@ -35,6 +36,11 @@ class Settings(BaseSettings):
     @classmethod
     def strip_supabase_url(cls, url: str) -> str:
         return url.rstrip("/")
+
+    @field_validator("cors_origins")
+    @classmethod
+    def strip_cors_origins(cls, origins: list[str]) -> list[str]:
+        return [origin.rstrip("/") for origin in origins]
 
 
 @lru_cache

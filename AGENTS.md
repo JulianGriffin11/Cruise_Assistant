@@ -9,7 +9,7 @@ This file is the source of truth for any coding agent (Claude Code, Cursor, Code
 - **Database:** Supabase Postgres (cruises, source documents, chunks)
 - **Migrations:** SQLAlchemy models + Alembic from the backend
 - **Retrieval:** Postgres full-text search on chunk text plus `pgvector` cosine search, combined into one ranked result set
-- **Hosting:** Railway (backend service + frontend service)
+- **Hosting:** Render (backend web service + frontend static site)
 - **LLM + embeddings:** OpenAI
 
 Stack is locked unless explicitly changed. Don't propose alternatives without a stated reason.

@@ -6,9 +6,9 @@ This file is the source of truth for any coding agent (Claude Code, Cursor, Code
 
 - **Backend:** Python + FastAPI
 - **Frontend:** Vite + React SPA + TypeScript
-- **Database:** Supabase Postgres (users, chats, source documents, chunks)
+- **Database:** Supabase Postgres (cruises, source documents, chunks)
 - **Migrations:** SQLAlchemy models + Alembic from the backend
-- **Retrieval:** Supabase `pgvector` + Postgres full-text search
+- **Retrieval:** Postgres full-text search on chunk text plus `pgvector` cosine search, combined into one ranked result set
 - **Hosting:** Railway (backend service + frontend service)
 - **LLM + embeddings:** OpenAI
 
@@ -21,7 +21,7 @@ Stack is locked unless explicitly changed. Don't propose alternatives without a 
 OK to depend on:
 
 - Things that are genuinely hard to get right (HTTP clients, ASGI servers, SQL drivers, parsers, LLM SDKs, ORM, migrations, auth SDKs).
-- The declared stack (FastAPI, React, Vite, Supabase clients, OpenAI SDK, etc.).
+- The declared stack (FastAPI, React, Vite, OpenAI SDK, etc.). Supabase Storage is accessed over HTTP with `httpx`, not a Supabase client package.
 
 Not OK:
 
@@ -35,13 +35,18 @@ Before adding a runtime dep, answer in the commit message:
 2. How often does it get used?
 3. What's its maintenance / transitive-dep footprint?
 
-Per-stack specifics live in `backend/AGENTS.md` and `frontend/AGENTS.md`.
-
 ## Configuration
 
-A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/lib/env.ts`). Do not call `os.getenv` / read `process.env` directly in app code. Do not call `load_dotenv` anywhere. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
+A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/src/lib/env.ts`). Do not call `os.getenv`, read `process.env`, or read `import.meta.env` directly in app code outside those modules. Do not call `load_dotenv` anywhere except through the backend settings module's pydantic-settings config. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
 
 Fail fast on startup if required config is missing. No silent fallbacks that hide real config errors.
+
+## Backend layout
+
+- **`app/ingestion/`** — ingest pipeline: Supabase Storage I/O for PDFs, PyMuPDF extract, chunking, embed inputs for chunks, `run_ingest`.
+- **`app/retrieval/`** — ask pipeline: hybrid FTS + vector search, streaming answer + citations.
+- **`app/embeddings/`** — shared OpenAI embedding calls (ingestion and retrieval both use this).
+- **`app/api/routes/`** — thin HTTP handlers; call into ingestion or retrieval, do not embed pipeline logic in routes.
 
 ## Code style (universal)
 
@@ -52,4 +57,3 @@ Fail fast on startup if required config is missing. No silent fallbacks that hid
 - **No feature flags** added speculatively.
 - **Comments:** explain *why* when non-obvious, never *what*. Remove stale TODOs.
 - **Keep files focused.** Prefer small modules.
-

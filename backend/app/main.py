@@ -4,8 +4,9 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api.routes import cruises, documents
 from app.db.session import get_db
-from app.services.storage import ensure_itineraries_bucket
+from app.ingestion.storage import ensure_itineraries_bucket
 
 
 @asynccontextmanager
@@ -15,6 +16,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(cruises.router, prefix="/cruises", tags=["cruises"])
+app.include_router(documents.router, prefix="/documents", tags=["documents"])
 
 
 @app.get("/health")

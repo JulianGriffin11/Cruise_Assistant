@@ -4,6 +4,14 @@ Internal tool for a cruise operator. Upload a package itinerary PDF (about 20 pa
 
 Check a box when that step is done.
 
+## Backend layout
+
+HTTP routes live under `backend/app/api/routes/`. Pipelines live under `backend/app/`:
+
+- **`ingestion/`** — upload storage, PDF extract, chunking, document embeddings, and `run_ingest` (background job).
+- **`retrieval/`** — hybrid search over chunks and streaming grounded answers (Phase 4).
+- **`embeddings/`** — shared OpenAI `text-embedding-3-small` helper used by both pipelines.
+
 ## Phase 1 — Skeleton
 
 - [x] Python project with FastAPI, settings, and a SQLAlchemy session
@@ -22,18 +30,18 @@ Check a box when that step is done.
 
 ## Phase 3 — Ingest
 
-- [ ] `POST /documents` accepts a PDF, stores it, and returns while status is `processing`
-- [ ] Background ingest extracts text per page with PyMuPDF
-- [ ] Empty text marks the document `failed` (scanned PDFs are out of scope)
-- [ ] Chunk by page, about 500–800 tokens, with overlap and the page number kept
-- [ ] Embed chunks with `text-embedding-3-small` and insert them
-- [ ] Status ends as `ready` or `failed`, with `GET /documents/{id}` for the UI to poll
-- [ ] `POST /documents/{id}/retry` re-runs a failed ingest
+- [x] `POST /documents` accepts a PDF, stores it, and returns while status is `processing`
+- [x] Background ingest extracts text per page with PyMuPDF
+- [x] Empty text marks the document `failed` (scanned PDFs are out of scope)
+- [x] Chunk by page, about 500–800 tokens, with overlap and the page number kept
+- [x] Embed chunks with `text-embedding-3-small` and insert them
+- [x] Status ends as `ready` or `failed`, with `GET /documents/{id}` for the UI to poll
+- [x] `POST /documents/{id}/retry` re-runs a failed ingest
 
 ## Phase 4 — Ask
 
 - [ ] `POST /chat` accepts the question, an optional cruise, and the recent turns already on screen
-- [ ] Embed the question and search the top 8 chunks by cosine distance
+- [ ] Hybrid search: Postgres full-text on chunk text plus cosine distance on the question embedding, merge into one ranked set, take the top 8
 - [ ] Drop weak matches, and filter by cruise when one is selected
 - [ ] Stream a grounded answer, then send citations (cruise name and page)
 - [ ] Prompt quotes dates and prices only when the chunks contain them, and says when the docs do not

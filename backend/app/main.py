@@ -19,6 +19,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(cruises.router, prefix="/cruises", tags=["cruises"])
 app.include_router(documents.router, prefix="/documents", tags=["documents"])
+app.include_router(chat.router, prefix="/chat", tags=["chat"])
 
 
 @app.get("/health")

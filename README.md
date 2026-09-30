@@ -40,13 +40,13 @@ HTTP routes live under `backend/app/api/routes/`. Pipelines live under `backend/
 
 ## Phase 4 — Ask
 
-- [ ] `POST /chat` accepts the question, an optional cruise, and the recent turns already on screen
-- [ ] Hybrid search: Postgres full-text on chunk text plus cosine distance on the question embedding, merge into one ranked set, take the top 8
-- [ ] Drop weak matches, and filter by cruise when one is selected
-- [ ] Stream a grounded answer, then send citations (cruise name and page)
-- [ ] Prompt quotes dates and prices only when the chunks contain them, and says when the docs do not
-- [ ] A request to draft an email is the same chat call; page citations stay under the reply, not inside the letter
-- [ ] Nothing about the thread is written to the database
+- [x] `POST /chat` accepts the question, an optional cruise, and the recent turns already on screen
+- [x] Hybrid search: Postgres full-text on chunk text plus cosine distance on the question embedding, merge into one ranked set, take the top 8
+- [x] Drop weak matches, and filter by cruise when one is selected
+- [x] Stream a grounded answer, then send citations (cruise name and page)
+- [x] Prompt quotes dates and prices only when the chunks contain them, and says when the docs do not
+- [x] A request to draft an email is the same chat call; page citations stay under the reply, not inside the letter
+- [x] Nothing about the thread is written to the database
 
 ## Phase 5 — Frontend
 

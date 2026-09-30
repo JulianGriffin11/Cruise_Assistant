@@ -31,5 +31,9 @@ class Chunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float]] = mapped_column(Vector(1536))
+    text_search: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('english', text)", persisted=True),
+    )
 
     document: Mapped["Document"] = relationship(back_populates="chunks")

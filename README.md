@@ -66,27 +66,37 @@ HTTP routes live under `backend/app/api/routes/`. Pipelines live under `backend/
 
 ## Phase 7 — Deploy (Render)
 
-Blueprint: [render.yaml](render.yaml) defines two services:
+Blueprint: [render.yaml](render.yaml) defines one web service. FastAPI serves the API and the built frontend on the same URL.
 
 | Service | URL |
 |---------|-----|
-| `cruise-assistant-api` | `https://cruise-assistant-api.onrender.com` |
-| `cruise-assistant` (static) | `https://cruise-assistant.onrender.com` |
+| `cruise-assistant` | `https://cruise-assistant.onrender.com` |
+
+Leave **Root Directory** empty. Runtime is **Python**. Commands:
+
+| Field | Command |
+|---------|---------|
+| Build | `./scripts/render-build.sh` |
+| Start | `./scripts/start.sh` |
+
+Leave **Pre-Deploy** empty. Render only allows that command on paid web services. `scripts/start.sh` runs `alembic upgrade head` before uvicorn.
+
+The build installs Node dependencies, builds `frontend/dist`, and installs the Python app with `uv`. Start serves that build and the API from one process. The production frontend calls `/cruises`, `/documents`, and `/chat` on this same host, so `VITE_API_BASE_URL` stays unset.
 
 ### One-time setup
 
-1. Push `main` to GitHub (includes `render.yaml`).
-2. In [Render](https://dashboard.render.com): **New** → **Blueprint** → connect `JulianGriffin11/Cruise_Assistant`.
-3. When prompted, set secret env vars on the API service (same values as local `backend/.env`):
+1. Push the branch Render builds (includes `render.yaml` and `scripts/`).
+2. In [Render](https://dashboard.render.com): **New** → **Blueprint** → connect `JulianGriffin11/Cruise_Assistant`. Or create one **Web Service**, runtime **Python**, and set the commands above.
+3. Set secret env vars (same values as local `backend/.env`):
    - `DATABASE_URL` — Supabase **direct** URL, port **5432** (not the 6543 pooler)
    - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`
    - `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`
-4. Apply the Blueprint. The API runs `alembic upgrade head` before each deploy; the static site gets `VITE_API_BASE_URL` from the API’s `RENDER_EXTERNAL_URL`.
+4. Deploy. Health check path is `/health`.
 
 ### Verify
 
-- API: `GET https://cruise-assistant-api.onrender.com/health` → `{"status":"ok"}`
-- App: open `https://cruise-assistant.onrender.com` (Library loads cruises from Supabase).
+- `GET https://cruise-assistant.onrender.com/health` → `{"status":"ok"}`
+- Open `https://cruise-assistant.onrender.com` (Library loads cruises from Supabase).
 
 ### Production smoke test (browser, not localhost)
 
@@ -94,13 +104,12 @@ Blueprint: [render.yaml](render.yaml) defines two services:
 2. Ask a question with a known answer → confirm cruise + page citation.
 3. Ask something not in the PDF → confirm refusal, not invented details.
 
-Check the boxes below after the Blueprint is live and the smoke test passes.
+Check the boxes below after the service is live and the smoke test passes.
 
-- [ ] Backend web service on Render (FastAPI + uvicorn)
-- [ ] Frontend static site on Render (`npm run build`, serve `dist/`)
-- [ ] Production env: Supabase, OpenAI, `DATABASE_URL` (direct 5432), backend secrets, `CORS_ORIGINS` for the live frontend URL, `VITE_API_BASE_URL` for the live API URL at build time
+- [ ] One Render web service serves the app and the API
+- [ ] Production env: Supabase, OpenAI, `DATABASE_URL` (direct 5432), backend secrets
 - [ ] Alembic migrations applied on the production database
-- [ ] Health check and a smoke test: upload and chat in the browser on the Render URLs
+- [ ] Health check and a smoke test: upload and chat in the browser on the Render URL
 
 ## Minimum viable product
 

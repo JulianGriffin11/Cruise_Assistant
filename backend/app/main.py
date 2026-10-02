@@ -1,8 +1,11 @@
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -62,3 +65,29 @@ async def request_logging_middleware(request: Request, call_next):
 def health(db: Session = Depends(get_db)) -> dict[str, str]:
     db.execute(text("SELECT 1"))
     return {"status": "ok"}
+
+
+# Present after scripts/render-build.sh. Local API runs stay API-only without it.
+_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+def _mount_frontend(dist: Path) -> None:
+    """Serve the Vite build from the same origin as the API."""
+    assets = dist / "assets"
+    if assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+
+    @app.get("/", include_in_schema=False)
+    def spa_index() -> FileResponse:
+        return FileResponse(dist / "index.html")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa_fallback(full_path: str) -> FileResponse:
+        candidate = (dist / full_path).resolve()
+        if candidate.is_file() and candidate.is_relative_to(dist.resolve()):
+            return FileResponse(candidate)
+        return FileResponse(dist / "index.html")
+
+
+if _DIST.is_dir():
+    _mount_frontend(_DIST)

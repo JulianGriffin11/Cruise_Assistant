@@ -1,12 +1,10 @@
 services:
   - type: web
-    name: cruise-assistant-api
+    name: cruise-assistant
     runtime: python
-    rootDir: backend
     plan: free
-    buildCommand: pip install uv && uv sync --frozen
-    preDeployCommand: uv run alembic upgrade head
-    startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: ./scripts/render-build.sh
+    startCommand: ./scripts/start.sh
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
@@ -16,7 +14,7 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: CORS_ORIGINS
-        value: '["https://cruise-assistant.onrender.com"]'
+        value: '["http://localhost:5173"]'
       - key: LANGFUSE_ENABLED
         value: "true"
       - key: DATABASE_URL
@@ -33,20 +31,3 @@ services:
         sync: false
       - key: LANGFUSE_BASE_URL
         sync: false
-
-  - type: web
-    name: cruise-assistant
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          name: cruise-assistant-api
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL

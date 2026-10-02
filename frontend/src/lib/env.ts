@@ -1,6 +1,4 @@
+// Empty in production: the API is served from the same origin as the SPA.
 const raw = import.meta.env.VITE_API_BASE_URL;
-if (typeof raw !== "string" || raw.trim() === "") {
-  throw new Error("VITE_API_BASE_URL is required");
-}
-
-export const apiBaseUrl = raw.replace(/\/$/, "");
+export const apiBaseUrl =
+  typeof raw === "string" ? raw.trim().replace(/\/$/, "") : "";

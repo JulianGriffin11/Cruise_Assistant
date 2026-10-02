@@ -18,6 +18,34 @@ class Settings(BaseSettings):
     openai_api_key: str
     cors_origins: list[str]
 
+    # Retrieval & LLM
+    embedding_model: str = "text-embedding-3-small"
+    chat_model: str = "gpt-4o-mini"
+    chat_history_limit: int = 10
+    retrieval_rrf_k: int = 60
+    retrieval_candidate_limit: int = 20
+    retrieval_result_limit: int = 5
+    retrieval_weak_cosine_distance: float = 0.55
+
+    # Logging
+    log_level: str = "INFO"
+    log_json: bool = False
+
+    # Langfuse
+    langfuse_public_key: str
+    langfuse_secret_key: str
+    langfuse_base_url: str
+    langfuse_enabled: bool = True
+
+    @field_validator("log_level")
+    @classmethod
+    def normalize_log_level(cls, level: str) -> str:
+        normalized = level.upper()
+        allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if normalized not in allowed:
+            raise ValueError(f"log_level must be one of {sorted(allowed)}")
+        return normalized
+
     @field_validator("database_url")
     @classmethod
     def direct_database_url(cls, url: str) -> str:

@@ -1,10 +1,13 @@
+import logging
 import uuid
 
 import httpx
 
-from app.config import get_settings
+from app.setup.config import get_settings
+from app.setup.logging import log_event
 
 BUCKET = "itineraries"
+logger = logging.getLogger(__name__)
 
 
 def _headers() -> dict[str, str]:
@@ -14,6 +17,19 @@ def _headers() -> dict[str, str]:
         "Authorization": f"Bearer {key}",
         "apikey": key,
     }
+
+
+def _log_storage_failure(operation: str, path: str, exc: Exception) -> None:
+    fields: dict[str, object] = {
+        "operation": operation,
+        "path": path,
+    }
+    if isinstance(exc, httpx.HTTPStatusError):
+        fields["status_code"] = exc.response.status_code
+        log_event(logger, logging.ERROR, "storage_error", **fields)
+        return
+    fields["error_type"] = type(exc).__name__
+    log_event(logger, logging.ERROR, "storage_error", **fields)
 
 
 def document_object_path(cruise_id: uuid.UUID, document_id: uuid.UUID) -> str:
@@ -47,14 +63,22 @@ def upload_pdf(storage_path: str, pdf_bytes: bytes) -> None:
         "x-upsert": "true",
     }
     with httpx.Client(timeout=120) as client:
-        response = client.post(url, headers=headers, content=pdf_bytes)
-        response.raise_for_status()
+        try:
+            response = client.post(url, headers=headers, content=pdf_bytes)
+            response.raise_for_status()
+        except Exception as exc:
+            _log_storage_failure("upload", storage_path, exc)
+            raise
 
 
 def download_pdf(storage_path: str) -> bytes:
     settings = get_settings()
     url = f"{settings.supabase_url}/storage/v1/object/{BUCKET}/{storage_path}"
     with httpx.Client(timeout=120) as client:
-        response = client.get(url, headers=_headers())
-        response.raise_for_status()
-        return response.content
+        try:
+            response = client.get(url, headers=_headers())
+            response.raise_for_status()
+            return response.content
+        except Exception as exc:
+            _log_storage_failure("download", storage_path, exc)
+            raise

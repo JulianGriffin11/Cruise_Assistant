@@ -37,7 +37,7 @@ Before adding a runtime dep, answer in the commit message:
 
 ## Configuration
 
-A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/src/lib/env.ts`). Do not call `os.getenv`, read `process.env`, or read `import.meta.env` directly in app code outside those modules. Do not call `load_dotenv` anywhere except through the backend settings module's pydantic-settings config. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
+A single settings module is the source of truth for environment per service (`backend/app/setup/config.py`, `frontend/src/lib/env.ts`). Do not call `os.getenv`, read `process.env`, or read `import.meta.env` directly in app code outside those modules. Do not call `load_dotenv` anywhere except through the backend settings module's pydantic-settings config. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
 
 Fail fast on startup if required config is missing. No silent fallbacks that hide real config errors.
 

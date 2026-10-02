@@ -20,12 +20,19 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(_BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(_BACKEND_ROOT))
 
+from app.setup.config import get_settings
+from app.setup.langfuse import configure_langfuse, flush_langfuse
+from app.setup.logging import configure_logging
+
+_playground_settings = get_settings()
+configure_logging(_playground_settings)
+configure_langfuse(_playground_settings)
+
 from sqlalchemy.orm import Session
 
 from app.db.models.cruise import Cruise
 from app.db.session import SessionLocal
-from app.retrieval.answer import stream_answer
-from app.retrieval.search import search_chunks
+from app.retrieval.chat_turn import chat_turn_events
 
 
 def _parse_sse(block: str) -> tuple[str | None, object | None]:
@@ -45,12 +52,11 @@ def _run_turn(
     cruise_id: uuid.UUID | None,
     history: list[dict[str, str]],
 ) -> str:
-    chunks = search_chunks(db, message, cruise_id)
     reply_parts: list[str] = []
     citations: list[dict[str, str | int]] = []
 
     print("\nAssistant: ", end="", flush=True)
-    for block in stream_answer(message, chunks, history):
+    for block in chat_turn_events(db, message, cruise_id, history, len(history)):
         event, data = _parse_sse(block)
         if event == "token" and isinstance(data, str):
             print(data, end="", flush=True)
@@ -110,39 +116,42 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    db = SessionLocal()
     try:
-        cruise_id = _resolve_cruise_id(db, args.cruise_id)
-    finally:
-        db.close()
-
-    history: list[dict[str, str]] = []
-    print("Ask about your itineraries. /clear = new thread, /quit = exit.\n")
-
-    while True:
-        try:
-            message = input("You: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            break
-
-        if not message:
-            continue
-        if message.lower() in {"/quit", "/exit", "/q"}:
-            break
-        if message.lower() == "/clear":
-            history.clear()
-            print("(thread cleared)\n")
-            continue
-
         db = SessionLocal()
         try:
-            reply = _run_turn(db, message, cruise_id, history)
+            cruise_id = _resolve_cruise_id(db, args.cruise_id)
         finally:
             db.close()
 
-        history.append({"role": "user", "content": message})
-        history.append({"role": "assistant", "content": reply})
+        history: list[dict[str, str]] = []
+        print("Ask about your itineraries. /clear = new thread, /quit = exit.\n")
+
+        while True:
+            try:
+                message = input("You: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+
+            if not message:
+                continue
+            if message.lower() in {"/quit", "/exit", "/q"}:
+                break
+            if message.lower() == "/clear":
+                history.clear()
+                print("(thread cleared)\n")
+                continue
+
+            db = SessionLocal()
+            try:
+                reply = _run_turn(db, message, cruise_id, history)
+            finally:
+                db.close()
+
+            history.append({"role": "user", "content": message})
+            history.append({"role": "assistant", "content": reply})
+    finally:
+        flush_langfuse()
 
 
 if __name__ == "__main__":

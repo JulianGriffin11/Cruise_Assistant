@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -9,9 +10,11 @@ from app.db.models.document import Document
 from app.db.session import get_db
 from app.ingestion.pipeline import can_retry, run_ingest
 from app.ingestion.storage import document_object_path, upload_pdf
+from app.setup.logging import log_event
 from app.schemas.document import DocumentRead
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 
@@ -76,6 +79,14 @@ async def upload_document(
     db.refresh(document)
 
     background_tasks.add_task(run_ingest, document.id)
+    log_event(
+        logger,
+        logging.INFO,
+        "document_uploaded",
+        document_id=document.id,
+        cruise_id=cruise_id,
+        bytes=len(pdf_bytes),
+    )
     return document
 
 
@@ -98,4 +109,11 @@ def retry_document(
     db.refresh(document)
 
     background_tasks.add_task(run_ingest, document.id)
+    log_event(
+        logger,
+        logging.INFO,
+        "document_retry",
+        document_id=document.id,
+        cruise_id=document.cruise_id,
+    )
     return document

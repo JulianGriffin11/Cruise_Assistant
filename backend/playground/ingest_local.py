@@ -19,6 +19,14 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(_BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(_BACKEND_ROOT))
 
+from app.setup.config import get_settings
+from app.setup.langfuse import configure_langfuse, flush_langfuse
+from app.setup.logging import configure_logging
+
+_playground_settings = get_settings()
+configure_logging(_playground_settings)
+configure_langfuse(_playground_settings)
+
 LOCAL_DATA_DIR = _BACKEND_ROOT.parent / "data"
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 
@@ -143,41 +151,44 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    pdf_path = _resolve_pdf(args.pdf)
-    filename, pdf_bytes = _load_pdf(pdf_path)
-
-    print(f"PDF: {pdf_path}")
-    ensure_itineraries_bucket()
-
-    db = SessionLocal()
     try:
-        cruise = _get_or_create_cruise(
-            db, args.cruise_id, args.cruise_name, args.cruise_year
-        )
-        document = _create_document_and_upload(db, cruise.id, filename, pdf_bytes)
-        document_id = document.id
-        print(f"Cruise: {cruise.name} ({cruise.year}) id={cruise.id}")
-        print(f"Document id={document_id} status=processing — running ingest…")
-    finally:
-        db.close()
+        pdf_path = _resolve_pdf(args.pdf)
+        filename, pdf_bytes = _load_pdf(pdf_path)
 
-    run_ingest(document_id)
+        print(f"PDF: {pdf_path}")
+        ensure_itineraries_bucket()
 
-    db = SessionLocal()
-    try:
-        document = db.get(Document, document_id)
-        if document is None:
-            raise SystemExit("Document row missing after ingest.")
-        chunk_count = db.query(Chunk).filter(Chunk.document_id == document_id).count()
-        print(f"Status: {document.status}")
-        if document.error_message:
-            print(f"Error: {document.error_message}")
-        if document.status == "ready":
-            print(f"Pages: {document.page_count}  Chunks: {chunk_count}")
-        if document.status != "ready":
-            sys.exit(1)
+        db = SessionLocal()
+        try:
+            cruise = _get_or_create_cruise(
+                db, args.cruise_id, args.cruise_name, args.cruise_year
+            )
+            document = _create_document_and_upload(db, cruise.id, filename, pdf_bytes)
+            document_id = document.id
+            print(f"Cruise: {cruise.name} ({cruise.year}) id={cruise.id}")
+            print(f"Document id={document_id} status=processing — running ingest…")
+        finally:
+            db.close()
+
+        run_ingest(document_id)
+
+        db = SessionLocal()
+        try:
+            document = db.get(Document, document_id)
+            if document is None:
+                raise SystemExit("Document row missing after ingest.")
+            chunk_count = db.query(Chunk).filter(Chunk.document_id == document_id).count()
+            print(f"Status: {document.status}")
+            if document.error_message:
+                print(f"Error: {document.error_message}")
+            if document.status == "ready":
+                print(f"Pages: {document.page_count}  Chunks: {chunk_count}")
+            if document.status != "ready":
+                sys.exit(1)
+        finally:
+            db.close()
     finally:
-        db.close()
+        flush_langfuse()
 
 
 if __name__ == "__main__":

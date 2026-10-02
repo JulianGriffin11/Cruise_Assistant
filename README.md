@@ -66,6 +66,36 @@ HTTP routes live under `backend/app/api/routes/`. Pipelines live under `backend/
 
 ## Phase 7 — Deploy (Render)
 
+Blueprint: [render.yaml](render.yaml) defines two services:
+
+| Service | URL |
+|---------|-----|
+| `cruise-assistant-api` | `https://cruise-assistant-api.onrender.com` |
+| `cruise-assistant` (static) | `https://cruise-assistant.onrender.com` |
+
+### One-time setup
+
+1. Push `main` to GitHub (includes `render.yaml`).
+2. In [Render](https://dashboard.render.com): **New** → **Blueprint** → connect `JulianGriffin11/Cruise_Assistant`.
+3. When prompted, set secret env vars on the API service (same values as local `backend/.env`):
+   - `DATABASE_URL` — Supabase **direct** URL, port **5432** (not the 6543 pooler)
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`
+   - `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`
+4. Apply the Blueprint. The API runs `alembic upgrade head` before each deploy; the static site gets `VITE_API_BASE_URL` from the API’s `RENDER_EXTERNAL_URL`.
+
+### Verify
+
+- API: `GET https://cruise-assistant-api.onrender.com/health` → `{"status":"ok"}`
+- App: open `https://cruise-assistant.onrender.com` (Library loads cruises from Supabase).
+
+### Production smoke test (browser, not localhost)
+
+1. Upload a PDF → wait until status **ready**.
+2. Ask a question with a known answer → confirm cruise + page citation.
+3. Ask something not in the PDF → confirm refusal, not invented details.
+
+Check the boxes below after the Blueprint is live and the smoke test passes.
+
 - [ ] Backend web service on Render (FastAPI + uvicorn)
 - [ ] Frontend static site on Render (`npm run build`, serve `dist/`)
 - [ ] Production env: Supabase, OpenAI, `DATABASE_URL` (direct 5432), backend secrets, `CORS_ORIGINS` for the live frontend URL, `VITE_API_BASE_URL` for the live API URL at build time
